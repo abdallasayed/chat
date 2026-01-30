@@ -1,0 +1,17 @@
+# Flutter
+aura_mobile/build/
+aura_mobile/.dart_tool/
+aura_mobile/.flutter-plugins
+aura_mobile/.flutter-plugins-dependencies
+aura_mobile/.packages
+aura_mobile/.pub-cache/
+aura_mobile/.pub/
+
+# Node
+aura_admin/node_modules/
+aura_admin/dist/
+aura_admin/.env
+
+# System
+.DS_Store
+Thumbs.db

@@ -1,0 +1,52 @@
+name: aura_mobile
+description: "A high-end Android Instant Messaging app focused on privacy and cinematic design."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI & Design
+  flutter_riverpod: ^2.4.9
+  google_fonts: ^6.1.0
+  lottie: ^3.1.0
+  glass_kit: ^3.0.0 # Glassmorphism
+  flutter_animate: ^4.5.0 # Fluid animations
+  
+  # Navigation
+  go_router: ^13.0.0
+  
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  
+  # Backend
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.16.0
+  cloud_firestore: ^4.14.0
+  firebase_storage: ^11.6.0
+  
+  # Utilities
+  intl: ^0.19.0
+  uuid: ^4.3.3
+  shared_preferences: ^2.2.2
+  image_picker: ^1.0.7
+  path_provider: ^2.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.8
+  hive_generator: ^2.0.1
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/animations/
+    - assets/images/
