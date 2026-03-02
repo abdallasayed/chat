@@ -4,46 +4,61 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { auth, db } from '../config/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function LoginScreen() {
   const router = useRouter();
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLogin, setIsLogin] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // بتبدأ بـ true عشان تفحص الأول
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) router.replace('/(tabs)');
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          // فحص الحساب: هل عنده اسم ولا لأ؟
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists() && userDoc.data().name) {
+            router.replace('/(tabs)');
+          } else {
+            router.replace('/completeProfile');
+          }
+        } catch (e) {
+          router.replace('/(tabs)');
+        }
+      } else {
+        setLoading(false); // لو مش مسجل دخول، يظهر شاشة اللوجين
+      }
     });
     return unsubscribe;
   }, []);
 
   const handleAuth = async () => {
-    if (!email || !password) return Alert.alert('تنبيه', 'اكتب الإيميل والباسورد!');
+    if (!email || !password || (!isLogin && !fullName)) return Alert.alert('تنبيه', 'أكمل كل البيانات!');
     setLoading(true);
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
+        // التوجيه هيحصل تلقائي من الـ useEffect
       } else {
         const userCred = await createUserWithEmailAndPassword(auth, email, password);
-        // السطر ده هو السحر: بيحفظ بيانات المستخدم في قاعدة البيانات عشان يظهر في صفحة الأصدقاء
         await setDoc(doc(db, 'users', userCred.user.uid), {
           id: userCred.user.uid,
-          email: email,
-          name: email.split('@'),
+          email: email.toLowerCase(),
+          name: fullName,
           createdAt: serverTimestamp()
         });
-        Alert.alert('عاش!', 'تم إنشاء الحساب بنجاح 🥳');
+        router.replace('/(tabs)');
       }
-      router.replace('/(tabs)');
     } catch (error: any) {
-      Alert.alert('مشكلة ❌', error.message);
-    } finally {
+      Alert.alert('مشكلة ❌', 'تأكد من صحة البيانات.');
       setLoading(false);
     }
   };
+
+  if (loading) return <View style={{flex: 1, backgroundColor: '#121212', justifyContent: 'center'}}><ActivityIndicator size="large" color="#6C63FF" /></View>;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,25 +67,27 @@ export default function LoginScreen() {
           <View style={styles.logoContainer}><Ionicons name="people" size={60} color="#FFF" /></View>
           <Text style={styles.title}>شِلتنا</Text>
         </View>
-
         <View style={styles.form}>
+          {!isLogin && (
+            <View style={styles.inputContainer}>
+              <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
+              <TextInput style={styles.input} placeholder="اسمك الحقيقي" placeholderTextColor="#888" value={fullName} onChangeText={setFullName} textAlign="right" />
+            </View>
+          )}
           <View style={styles.inputContainer}>
             <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
             <TextInput style={styles.input} placeholder="البريد الإلكتروني" placeholderTextColor="#888" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" textAlign="right" />
           </View>
-
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
             <TextInput style={styles.input} placeholder="كلمة المرور" placeholderTextColor="#888" value={password} onChangeText={setPassword} secureTextEntry textAlign="right" />
           </View>
-
           <TouchableOpacity style={styles.loginButton} onPress={handleAuth} disabled={loading}>
             {loading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.loginButtonText}>{isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}</Text>}
           </TouchableOpacity>
-
           <View style={styles.signupContainer}>
             <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
-              <Text style={styles.signupLink}>{isLogin ? 'سجل حساب جديد من هنا' : 'عندك حساب؟ سجل دخول'}</Text>
+              <Text style={styles.signupLink}>{isLogin ? 'حساب جديد؟ سجل من هنا' : 'عندك حساب؟ سجل دخول'}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -82,7 +99,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
   content: { flex: 1, justifyContent: 'center', padding: 20 },
-  header: { alignItems: 'center', marginBottom: 50 },
+  header: { alignItems: 'center', marginBottom: 40 },
   logoContainer: { width: 100, height: 100, backgroundColor: '#6C63FF', borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   title: { fontSize: 36, fontWeight: 'bold', color: '#FFF', marginBottom: 10 },
   form: { width: '100%' },

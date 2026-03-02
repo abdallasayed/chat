@@ -14,7 +14,6 @@ export default function FriendsScreen() {
     const currentUserUid = auth.currentUser?.uid;
     if (!currentUserUid) return;
 
-    // بنجيب كل المستخدمين ما عدا الشخص اللي فاتح التطبيق دلوقتي
     const q = query(collection(db, 'users'), where('id', '!=', currentUserUid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const usersData = snapshot.docs.map(doc => doc.data());
@@ -35,21 +34,23 @@ export default function FriendsScreen() {
         <FlatList
           data={users}
           keyExtractor={(item) => item.id}
-          ListEmptyComponent={<Text style={{color: '#888', textAlign: 'center', marginTop: 50}}>مفيش مستخدمين تانيين لسه سجلوا في التطبيق</Text>}
-          renderItem={({ item }) => (
-            <TouchableOpacity style={styles.card} onPress={() => router.push(`/user/${item.id}`)}>
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>{item.name ? item.name.charAt(0).toUpperCase() : 'U'}</Text>
-              </View>
-              <View style={styles.info}>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.email}>{item.email}</Text>
-              </View>
-              <TouchableOpacity style={styles.viewBtn}>
-                <Ionicons name="chevron-back" size={24} color="#6C63FF" />
+          ListEmptyComponent={<Text style={styles.emptyText}>مفيش مستخدمين تانيين لسه سجلوا</Text>}
+          renderItem={({ item }) => {
+            // حل مشكلة الخطأ (لو مفيش اسم، هيجيب أول حرف من الإيميل، ولو مفيش إيميل هيحط حرف U)
+            const displayName = item.name || item.email?.split('@') || 'مستخدم';
+            const firstLetter = displayName.charAt(0).toUpperCase();
+
+            return (
+              <TouchableOpacity style={styles.card} onPress={() => router.push(`/user/${item.id}`)}>
+                <View style={styles.avatarPlaceholder}><Text style={styles.avatarText}>{firstLetter}</Text></View>
+                <View style={styles.info}>
+                  <Text style={styles.name}>{displayName}</Text>
+                  <Text style={styles.email}>{item.email}</Text>
+                </View>
+                <TouchableOpacity style={styles.viewBtn}><Ionicons name="chevron-back" size={24} color="#6C63FF" /></TouchableOpacity>
               </TouchableOpacity>
-            </TouchableOpacity>
-          )}
+            );
+          }}
         />
       )}
     </SafeAreaView>
@@ -60,6 +61,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
   header: { padding: 20, alignItems: 'flex-end' },
   headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#FFF' },
+  emptyText: { color: '#888', textAlign: 'center', marginTop: 50 },
   card: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#1E1E1E', marginHorizontal: 20, marginBottom: 15, padding: 15, borderRadius: 15 },
   avatarPlaceholder: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#2C2C2C', justifyContent: 'center', alignItems: 'center', marginLeft: 15, borderWidth: 1, borderColor: '#6C63FF' },
   avatarText: { color: '#FFF', fontSize: 20, fontWeight: 'bold' },
